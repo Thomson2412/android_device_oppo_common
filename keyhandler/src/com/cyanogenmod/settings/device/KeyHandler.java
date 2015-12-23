@@ -59,7 +59,25 @@ public class KeyHandler implements DeviceKeyHandler {
 
     private static final String KEY_GESTURE_HAPTIC_FEEDBACK =
             "touchscreen_gesture_haptic_feedback";
-
+            
+    private static final String KEY_CAMERA_LAUNCH_INTENT = 
+			"touchscreen_gesture_camera_launch_intent";   
+    private static final String KEY_TORCH_LAUNCH_INTENT = "touchscreen_gesture_torch_launch_intent";  
+    private static final String KEY_PLAY_PAUSE_LAUNCH_INTENT = 
+			"touchscreen_gesture_play_pause_launch_intent";   
+    private static final String KEY_PREVIOUS_LAUNCH_INTENT = 
+			"touchscreen_gesture_previous_launch_intent"; 
+    private static final String KEY_NEXT_LAUNCH_INTENT = "touchscreen_gesture_next_launch_intent";
+    
+    private static final String KEY_CAMERA_FEEDBACK = 
+			"touchscreen_gesture_camera_feedback";  
+    private static final String KEY_TORCH_FEEDBACK  = "touchscreen_gesture_torch_feedback";    
+    private static final String KEY_PLAY_PAUSE_FEEDBACK  = 
+			"touchscreen_gesture_play_pause_feedback";  
+    private static final String KEY_PREVIOUS_FEEDBACK  = 
+			"touchscreen_gesture_previous_feedback";
+    private static final String KEY_NEXT_FEEDBACK  = "touchscreen_gesture_next_feedback";
+    
     private static final String ACTION_DISMISS_KEYGUARD =
             "com.android.keyguard.action.DISMISS_KEYGUARD_SECURELY";
 
@@ -174,46 +192,56 @@ public class KeyHandler implements DeviceKeyHandler {
             switch (msg.arg1) {
             case FLIP_CAMERA_SCANCODE:
             case GESTURE_CIRCLE_SCANCODE:
-                ensureKeyguardManager();
-                final String action;
-                mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
-                if (mKeyguardManager.isKeyguardSecure() && mKeyguardManager.isKeyguardLocked()) {
-                    action = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE;
-                } else {
-                    mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD),
-                            UserHandle.CURRENT);
-                    action = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
-                }
-                mPowerManager.wakeUp(SystemClock.uptimeMillis(), "wakeup-gesture");
-                Intent intent = new Intent(action, null);
-                startActivitySafely(intent);
-                doHapticFeedback();
+				if(!launchIntentFromKey(KEY_CAMERA_LAUNCH_INTENT)){
+					ensureKeyguardManager();
+					final String action;
+					mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
+					if (mKeyguardManager.isKeyguardSecure() && mKeyguardManager.isKeyguardLocked()) {
+						action = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE;
+					} else {
+						mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD),
+								UserHandle.CURRENT);
+						action = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
+					}
+					mPowerManager.wakeUp(SystemClock.uptimeMillis(), "wakeup-gesture");
+					Intent intent = new Intent(action, null);
+					startActivitySafely(intent);
+				}
+                doHapticFeedback(KEY_CAMERA_FEEDBACK);
                 break;
             case GESTURE_SWIPE_DOWN_SCANCODE:
-                dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
-                doHapticFeedback();
+				if(!launchIntentFromKey(KEY_PLAY_PAUSE_LAUNCH_INTENT)){
+					dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+				}
+                doHapticFeedback(KEY_PLAY_PAUSE_FEEDBACK);
                 break;
             case GESTURE_V_SCANCODE: {
-                String rearCameraId = getRearCameraId();
-                if (rearCameraId != null) {
-                    mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
-                    try {
-                        mCameraManager.setTorchMode(rearCameraId, !mTorchEnabled);
-                        mTorchEnabled = !mTorchEnabled;
-                    } catch (CameraAccessException e) {
-                        // Ignore
-                    }
-                    doHapticFeedback();
-                }
+				if(!launchIntentFromKey(KEY_TORCH_LAUNCH_INTENT)){
+					String rearCameraId = getRearCameraId();
+					if (rearCameraId != null) {
+						mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
+						try {
+							mCameraManager.setTorchMode(rearCameraId, !mTorchEnabled);
+							mTorchEnabled = !mTorchEnabled;
+						} catch (CameraAccessException e) {
+							// Ignore
+						}
+					}
+				}
+				doHapticFeedback(KEY_TORCH_FEEDBACK);
                 break;
             }
             case GESTURE_LTR_SCANCODE:
-                dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-                doHapticFeedback();
+				if(!launchIntentFromKey(KEY_PREVIOUS_LAUNCH_INTENT)){
+					dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+				}
+                doHapticFeedback(KEY_PREVIOUS_FEEDBACK);
                 break;
             case GESTURE_GTR_SCANCODE:
-                dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_NEXT);
-                doHapticFeedback();
+				if(!launchIntentFromKey(KEY_NEXT_LAUNCH_INTENT)){
+					dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_NEXT);
+				}
+                doHapticFeedback(KEY_NEXT_FEEDBACK);
                 break;
             }
         }
@@ -305,6 +333,15 @@ public class KeyHandler implements DeviceKeyHandler {
             // Ignore
         }
     }
+    
+    private void doHapticFeedback(String key) {
+        boolean enabled = Settings.System.getInt(mContext.getContentResolver(), key, 0) != 0;
+        if(enabled){
+			doHapticFeedback();
+		}
+		else{
+		}
+    }
 
     private void doHapticFeedback() {
         if (mVibrator == null) {
@@ -316,4 +353,21 @@ public class KeyHandler implements DeviceKeyHandler {
             mVibrator.vibrate(50);
         }
     }
+    
+    private boolean launchIntentFromKey(String key){
+		String packageName = Settings.System.getString(mContext.getContentResolver(), key);
+		Intent intent = null;		
+		if(packageName != null && !packageName.equals("")){
+			intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);			
+		}
+		if(intent != null){
+			ensureKeyguardManager();
+            mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
+            mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT);
+            mPowerManager.wakeUp(SystemClock.uptimeMillis());
+            startActivitySafely(intent);
+            return true;
+		}
+		return false;
+	}
 }

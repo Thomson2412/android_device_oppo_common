@@ -339,8 +339,6 @@ public class KeyHandler implements DeviceKeyHandler {
         if(enabled){
 			doHapticFeedback();
 		}
-		else{
-		}
     }
 
     private void doHapticFeedback() {

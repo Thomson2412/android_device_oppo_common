@@ -16,7 +16,7 @@
 
 package com.cyanogenmod.settings.device;
 
-import android.app.KeyguardManager;
+import android.app.ActivityManagerNative;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -339,7 +339,6 @@ public class KeyHandler implements DeviceKeyHandler {
 			intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);			
 		}
 		if(intent != null){
-			ensureKeyguardManager();
             mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
             mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT);
             mPowerManager.wakeUp(SystemClock.uptimeMillis());

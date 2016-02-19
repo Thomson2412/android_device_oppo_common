@@ -340,8 +340,8 @@ public class KeyHandler implements DeviceKeyHandler {
 		}
 		if(intent != null){
             mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
-            mPowerManager.wakeUp(SystemClock.uptimeMillis());
             mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT);
+            mPowerManager.wakeUp(SystemClock.uptimeMillis());
             startActivitySafely(intent);
             return true;
 		}

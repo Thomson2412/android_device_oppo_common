@@ -23,6 +23,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.INJECT_EVENTS"/>
+    <uses-permission android:name="cyanogenmod.permission.HARDWARE_ABSTRACTION_ACCESS" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
     <uses-sdk
@@ -30,7 +31,7 @@
 
     <application
         android:icon="@mipmap/ic_launcher_settings"
-        android:label="@string/app_name"
+        android:label="@*cyanogenmod.platform:string/device_settings_app_name"
         android:theme="@style/Theme.Main">
 
         <!-- stub to ensure its loaded - DO NOT REMOVE -->
@@ -52,13 +53,13 @@
 
         <activity
             android:name=".TouchscreenGestureSettings"
-            android:label="@string/screen_gestures_panel_title">
+            android:label="@*cyanogenmod.platform:string/screen_gestures_panel_title">
             <intent-filter>
                 <action android:name="com.cyanogenmod.action.LAUNCH_TOUCHSCREEN_GESTURE_SETTINGS" />
             </intent-filter>
             <meta-data
                 android:name="com.android.settings.title"
-                android:resource="@string/screen_gestures_panel_title"/>
+                android:resource="@*cyanogenmod.platform:string/screen_gestures_panel_title"/>
         </activity>
 
         <activity
@@ -74,10 +75,9 @@
 
         <receiver android:name=".Startup" >
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.PRE_BOOT_COMPLETED" />
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
                 <action android:name="cyanogenmod.intent.action.GESTURE_CAMERA" />
+                <action android:name="cyanogenmod.intent.action.INITIALIZE_CM_HARDWARE" />
             </intent-filter>
         </receiver>
     </application>

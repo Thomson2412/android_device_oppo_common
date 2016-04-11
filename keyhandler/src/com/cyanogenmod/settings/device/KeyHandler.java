@@ -195,20 +195,20 @@ public class KeyHandler implements DeviceKeyHandler {
             switch (msg.arg1) {
                 case FLIP_CAMERA_SCANCODE:
                 case GESTURE_CIRCLE_SCANCODE:
-                if(!launchIntentFromKey(KEY_CAMERA_LAUNCH_INTENT)){
-                    mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
+                    if(!launchIntentFromKey(KEY_CAMERA_LAUNCH_INTENT)){
+                        mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
 
-                    Intent intent = new Intent(cyanogenmod.content.Intent.ACTION_SCREEN_CAMERA_GESTURE);
-                    mContext.sendBroadcast(intent, Manifest.permission.STATUS_BAR_SERVICE);
-                }
-                doHapticFeedback(KEY_CAMERA_FEEDBACK);
-                break;
+                        Intent intent = new Intent(cyanogenmod.content.Intent.ACTION_SCREEN_CAMERA_GESTURE);
+                        mContext.sendBroadcast(intent, Manifest.permission.STATUS_BAR_SERVICE);
+                    }
+                    doHapticFeedback(KEY_CAMERA_FEEDBACK);
+                    break;
                 case GESTURE_SWIPE_DOWN_SCANCODE:
-                if(!launchIntentFromKey(KEY_PLAY_PAUSE_LAUNCH_INTENT)){
-                    dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
-                }
-                doHapticFeedback(KEY_PLAY_PAUSE_FEEDBACK);
-                break;
+                    if(!launchIntentFromKey(KEY_PLAY_PAUSE_LAUNCH_INTENT)){
+                        dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                    }
+                    doHapticFeedback(KEY_PLAY_PAUSE_FEEDBACK);
+                    break;
                 case GESTURE_V_SCANCODE: {
                     if(!launchIntentFromKey(KEY_TORCH_LAUNCH_INTENT)){
                         String rearCameraId = getRearCameraId();
@@ -226,17 +226,17 @@ public class KeyHandler implements DeviceKeyHandler {
                     break;
                 }
                 case GESTURE_LTR_SCANCODE:
-                if(!launchIntentFromKey(KEY_PREVIOUS_LAUNCH_INTENT)){
-                    dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-                }
-                doHapticFeedback(KEY_PREVIOUS_FEEDBACK);
-                break;
+                    if(!launchIntentFromKey(KEY_PREVIOUS_LAUNCH_INTENT)){
+                        dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+                    }
+                    doHapticFeedback(KEY_PREVIOUS_FEEDBACK);
+                    break;
                 case GESTURE_GTR_SCANCODE:
-                if(!launchIntentFromKey(KEY_NEXT_LAUNCH_INTENT)){
-                    dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_NEXT);
-                }
-                doHapticFeedback(KEY_NEXT_FEEDBACK);
-                break;
+                    if(!launchIntentFromKey(KEY_NEXT_LAUNCH_INTENT)){
+                        dispatchMediaKeyWithWakeLockToMediaSession(KeyEvent.KEYCODE_MEDIA_NEXT);
+                    }
+                    doHapticFeedback(KEY_NEXT_FEEDBACK);
+                    break;
             }
         }
     }

@@ -41,6 +41,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
+import java.net.URISyntaxException;
 
 import com.android.internal.os.DeviceKeyHandler;
 import com.android.internal.util.ArrayUtils;
@@ -358,13 +359,17 @@ public class KeyHandler implements DeviceKeyHandler {
 			}
             Intent intent = null;
             if(packageName.equals("") || packageName.equals("default")){
-                return false
+                return false;
             }
 			else if(packageName.equals("shortcut")){
 				intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
 			}
 			else{
-				intent = Intent.parseUri(packageName, Intent.URI_INTENT_SCHEME)
+                try{
+                    intent = Intent.parseUri(packageName, Intent.URI_INTENT_SCHEME);
+                } catch(URISyntaxException e){
+                    return false;
+                }
 			}
 			if(intent != null){
 				mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);

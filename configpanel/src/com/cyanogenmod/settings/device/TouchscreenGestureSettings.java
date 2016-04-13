@@ -28,6 +28,7 @@ import android.content.pm.PackageInfo;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.os.AsyncTask;
@@ -51,13 +52,16 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
     "touchscreen_gesture_previous_launch_intent";
     private static final String KEY_NEXT_LAUNCH_INTENT = "touchscreen_gesture_next_launch_intent";
 
+    private static final int REQUEST_PICK_SHORTCUT = 100;
+    private static final int REQUEST_CREATE_SHORTCUT = 101;
+
     private MultiSelectListPreference mHapticFeedback;
     private ListPreference mCameraLaunchIntent;
     private ListPreference mTorchLaunchIntent;
     private ListPreference mPlayPauseLaunchIntent;
     private ListPreference mPreviousLaunchIntent;
     private ListPreference mNextLaunchIntent;
-	
+
 	private String preferenceKeyLastChangedShortcut;
 
     @Override
@@ -112,7 +116,12 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
         if(KEY_CAMERA_LAUNCH_INTENT.equals(key)){
             final String value = (String) newValue;
             findPreference(KEY_CAMERA_LAUNCH_INTENT).setSummary(getAppnameFromPackagename(value));
-            Settings.System.putString(getContentResolver(), KEY_CAMERA_LAUNCH_INTENT, value);
+            if(value.equals("shortcut")){
+                createShortcutPicked(KEY_CAMERA_LAUNCH_INTENT);
+            }
+            else{
+                Settings.System.putString(getContentResolver(), KEY_CAMERA_LAUNCH_INTENT, value);
+            }
             return true;
         }
         if(KEY_TORCH_LAUNCH_INTENT.equals(key)){
@@ -151,9 +160,9 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
             getListView().setPadding(0, 0, 0, 0);
         }
     }
-	
-	
-	private void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == REQUEST_PICK_SHORTCUT) {
                 startActivityForResult(data, REQUEST_CREATE_SHORTCUT);
@@ -164,7 +173,7 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
                         Intent.EXTRA_SHORTCUT_NAME));
                 String uri = intent.toUri(Intent.URI_INTENT_SCHEME);
                 if(preferenceKeyLastChangedShortcut != null){
-                    Settings.System.putString(getContentResolver(), 
+                    Settings.System.putString(getContentResolver(),
 							preferenceKeyLastChangedShortcut, uri);
                 }
             }
@@ -227,11 +236,11 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
             final CharSequence[] packageNames =
                     listPackageNames.toArray(new CharSequence[listPackageNames.size()]);
             final CharSequence[] hrblPackageNames = new CharSequence[listPackageNames.size()];
-			
+
             for(int i = 0; i < listPackageNames.size(); i++){
                 hrblPackageNames[i] = getAppnameFromPackagename(listPackageNames.get(i));
             }
-			
+
 			hrblPackageNames[0] = getResources().getString(R.string.touchscreen_action_default);
             hrblPackageNames[1] = getResources().getString(R.string.touchscreen_action_shortcut);
 

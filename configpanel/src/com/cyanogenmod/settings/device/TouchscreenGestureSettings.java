@@ -57,6 +57,8 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
     private ListPreference mPlayPauseLaunchIntent;
     private ListPreference mPreviousLaunchIntent;
     private ListPreference mNextLaunchIntent;
+	
+	private String preferenceKeyLastChangedShortcut;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -92,19 +94,18 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
             final CharSequence[] valueOptions = mHapticFeedback.getEntryValues();
             if(!value.isEmpty()){
                 CMSettings.System.putInt(getContentResolver(),
-                CMSettings.System.TOUCHSCREEN_GESTURE_HAPTIC_FEEDBACK, 1);
-                for(int i = 0; i < valueOptions.length; i++){
-                    if(value.contains(valueOptions[i].toString())){
-                        Settings.System.putInt(getContentResolver(), valueOptions[i].toString(), 1);
-                    }
-                    else{
-                        Settings.System.putInt(getContentResolver(), valueOptions[i].toString(), 0);
+						CMSettings.System.TOUCHSCREEN_GESTURE_HAPTIC_FEEDBACK, 1);
+                for (CharSequence valueOption : valueOptions) {
+                    if (value.contains(valueOption.toString())) {
+                        Settings.System.putInt(getContentResolver(), valueOption.toString(), 1);
+                    } else {
+                        Settings.System.putInt(getContentResolver(), valueOption.toString(), 0);
                     }
                 }
             }
             else{
                 CMSettings.System.putInt(getContentResolver(),
-                CMSettings.System.TOUCHSCREEN_GESTURE_HAPTIC_FEEDBACK, 0);
+						CMSettings.System.TOUCHSCREEN_GESTURE_HAPTIC_FEEDBACK, 0);
             }
             return true;
         }
@@ -150,12 +151,39 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
             getListView().setPadding(0, 0, 0, 0);
         }
     }
+	
+	
+	private void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == REQUEST_PICK_SHORTCUT) {
+                startActivityForResult(data, REQUEST_CREATE_SHORTCUT);
+            }
+            if(requestCode == REQUEST_CREATE_SHORTCUT){
+                Intent intent = data.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
+                intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, data.getStringExtra(
+                        Intent.EXTRA_SHORTCUT_NAME));
+                String uri = intent.toUri(Intent.URI_INTENT_SCHEME);
+                if(preferenceKeyLastChangedShortcut != null){
+                    Settings.System.putString(getContentResolver(), 
+							preferenceKeyLastChangedShortcut, uri);
+                }
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void createShortcutPicked(String key){
+        Intent pickIntent = new Intent(Intent.ACTION_PICK_ACTIVITY);
+        pickIntent.putExtra(Intent.EXTRA_INTENT, new Intent(Intent.ACTION_CREATE_SHORTCUT));
+        pickIntent.putExtra(Intent.EXTRA_TITLE, "Select shortcut");
+        startActivityForResult(pickIntent, REQUEST_PICK_SHORTCUT);
+        preferenceKeyLastChangedShortcut = key;
+    }
 
     private List<String> getPackageNames(){
         List<String> packageNameList = new ArrayList<String>();
         List<PackageInfo> packs =
-        getApplicationContext().getPackageManager().getInstalledPackages(0);
-        packageNameList.add("");
+				getApplicationContext().getPackageManager().getInstalledPackages(0);
         for(int i = 0; i < packs.size(); i++){
             String packageName = packs.get(i).packageName;
             Intent launchIntent = getApplicationContext().getPackageManager()
@@ -178,8 +206,7 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
         } catch (final Exception e) {
             ai = null;
         }
-        return (String) (ai != null ? pm.getApplicationLabel(ai) :
-        getResources().getString(R.string.touchscreen_action_unkownappforpackagename));
+        return (String) (ai != null ? pm.getApplicationLabel(ai) : packagename);
     }
 
     private String getSummary(String key){
@@ -195,14 +222,18 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
         @Override
         protected Void doInBackground(Void... voids) {
             List<String> listPackageNames = getPackageNames();
+            listPackageNames.add(0, "default");
+            listPackageNames.add(1, "shortcut");
             final CharSequence[] packageNames =
-            listPackageNames.toArray(new CharSequence[listPackageNames.size()]);
+                    listPackageNames.toArray(new CharSequence[listPackageNames.size()]);
             final CharSequence[] hrblPackageNames = new CharSequence[listPackageNames.size()];
-            hrblPackageNames[0] = "Default action";
-
-            for(int i = 1; i < listPackageNames.size(); i++){
+			
+            for(int i = 0; i < listPackageNames.size(); i++){
                 hrblPackageNames[i] = getAppnameFromPackagename(listPackageNames.get(i));
             }
+			
+			hrblPackageNames[0] = getResources().getString(R.string.touchscreen_action_default);
+            hrblPackageNames[1] = getResources().getString(R.string.touchscreen_action_shortcut);
 
             mCameraLaunchIntent.setEntries(hrblPackageNames);
             mCameraLaunchIntent.setEntryValues(packageNames);

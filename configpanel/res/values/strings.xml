@@ -105,6 +105,7 @@
     <string name="touchscreen_action_title_next_summary">Loading...</string>
     
     <string name="touchscreen_action_default">Default action</string>
+	<string name="touchscreen_action_shortcut">Custom shortcut</string>
     <string name="touchscreen_action_unkownappforpackagename">(Unkown)</string>
 
 </resources>

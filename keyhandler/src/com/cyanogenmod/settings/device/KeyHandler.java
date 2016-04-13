@@ -353,17 +353,26 @@ public class KeyHandler implements DeviceKeyHandler {
 
         private boolean launchIntentFromKey(String key){
             String packageName = Settings.System.getString(mContext.getContentResolver(), key);
+			if(packageName == null){
+				return false;
+			}
             Intent intent = null;
-            if(packageName != null && !packageName.equals("")){
-                intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
+            if(packageName.equals("") || packageName.equals("default")){
+                return false
             }
-            if(intent != null){
-                mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
-                mPowerManager.wakeUp(SystemClock.uptimeMillis());
-                mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT);
-                startActivitySafely(intent);
-                return true;
-            }
+			else if(packageName.equals("shortcut")){
+				intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
+			}
+			else{
+				intent = Intent.parseUri(packageName, Intent.URI_INTENT_SCHEME)
+			}
+			if(intent != null){
+				mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
+				mPowerManager.wakeUp(SystemClock.uptimeMillis());
+				mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT);
+				startActivitySafely(intent);
+				return true;
+			}
             return false;
         }
     }

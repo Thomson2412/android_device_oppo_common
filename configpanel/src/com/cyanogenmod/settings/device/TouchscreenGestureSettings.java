@@ -115,38 +115,57 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
         }
         if(KEY_CAMERA_LAUNCH_INTENT.equals(key)){
             final String value = (String) newValue;
-            findPreference(KEY_CAMERA_LAUNCH_INTENT).setSummary(getAppnameFromPackagename(value));
             if(value.equals("shortcut")){
                 createShortcutPicked(KEY_CAMERA_LAUNCH_INTENT);
             }
             else{
                 Settings.System.putString(getContentResolver(), KEY_CAMERA_LAUNCH_INTENT, value);
+                reloadSummarys();
             }
             return true;
         }
         if(KEY_TORCH_LAUNCH_INTENT.equals(key)){
             final String value = (String) newValue;
-            findPreference(KEY_TORCH_LAUNCH_INTENT).setSummary(getAppnameFromPackagename(value));
-            Settings.System.putString(getContentResolver(), KEY_TORCH_LAUNCH_INTENT, value);
+            if(value.equals("shortcut")){
+                createShortcutPicked(KEY_TORCH_LAUNCH_INTENT);
+            }
+            else{
+                Settings.System.putString(getContentResolver(), KEY_TORCH_LAUNCH_INTENT, value);
+                reloadSummarys();
+            }
             return true;
         }
         if(KEY_PLAY_PAUSE_LAUNCH_INTENT.equals(key)){
             final String value = (String) newValue;
-            findPreference(KEY_PLAY_PAUSE_LAUNCH_INTENT).setSummary(
-            getAppnameFromPackagename(value));
-            Settings.System.putString(getContentResolver(), KEY_PLAY_PAUSE_LAUNCH_INTENT, value);
+            if(value.equals("shortcut")){
+                createShortcutPicked(KEY_PLAY_PAUSE_LAUNCH_INTENT);
+            }
+            else{
+                Settings.System.putString(getContentResolver(), KEY_PLAY_PAUSE_LAUNCH_INTENT, value);
+                reloadSummarys();
+            }
             return true;
         }
         if(KEY_PREVIOUS_LAUNCH_INTENT.equals(key)){
             final String value = (String) newValue;
-            findPreference(KEY_PREVIOUS_LAUNCH_INTENT).setSummary(getAppnameFromPackagename(value));
-            Settings.System.putString(getContentResolver(), KEY_PREVIOUS_LAUNCH_INTENT, value);
+            if(value.equals("shortcut")){
+                createShortcutPicked(KEY_PREVIOUS_LAUNCH_INTENT);
+            }
+            else{
+                Settings.System.putString(getContentResolver(), KEY_PREVIOUS_LAUNCH_INTENT, value);
+                reloadSummarys();
+            }
             return true;
         }
         if(KEY_NEXT_LAUNCH_INTENT.equals(key)){
             final String value = (String) newValue;
-            findPreference(KEY_NEXT_LAUNCH_INTENT).setSummary(getAppnameFromPackagename(value));
-            Settings.System.putString(getContentResolver(), KEY_NEXT_LAUNCH_INTENT, value);
+            if(value.equals("shortcut")){
+                createShortcutPicked(KEY_NEXT_LAUNCH_INTENT);
+            }
+            else{
+                Settings.System.putString(getContentResolver(), KEY_NEXT_LAUNCH_INTENT, value);
+                reloadSummarys();
+            }
             return true;
         }
         return super.onPreferenceChange(preference, newValue);
@@ -161,7 +180,6 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
         }
     }
 
-
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == REQUEST_PICK_SHORTCUT) {
@@ -175,8 +193,14 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
                 if(preferenceKeyLastChangedShortcut != null){
                     Settings.System.putString(getContentResolver(),
 							preferenceKeyLastChangedShortcut, uri);
+                    reloadSummarys();
                 }
             }
+        }
+        else{
+            Settings.System.putString(getContentResolver(),
+                    preferenceKeyLastChangedShortcut, "default");
+            reloadSummarys();
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -220,10 +244,24 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
 
     private String getSummary(String key){
         String summary = Settings.System.getString(getContentResolver(), key);
-        if(summary != null){
-            return getAppnameFromPackagename(summary);
+        if(summary == null){
+            return getResources().getString(R.string.touchscreen_action_unkownappforpackagename);
         }
-        return getResources().getString(R.string.touchscreen_action_unkownappforpackagename);
+        else if(summary.startsWith("intent:")){
+            return getResources().getString(R.string.touchscreen_action_shortcut);
+        }
+        else if(summary.equals("default")){
+            return getResources().getString(R.string.touchscreen_action_default);
+        }
+        return getAppnameFromPackagename(summary);
+    }
+
+    private void reloadSummarys(){
+        mCameraLaunchIntent.setSummary(getSummary(KEY_CAMERA_LAUNCH_INTENT));
+        mTorchLaunchIntent.setSummary(getSummary(KEY_TORCH_LAUNCH_INTENT));
+        mPlayPauseLaunchIntent.setSummary(getSummary(KEY_PLAY_PAUSE_LAUNCH_INTENT));
+        mPreviousLaunchIntent.setSummary(getSummary(KEY_PREVIOUS_LAUNCH_INTENT));
+        mNextLaunchIntent.setSummary(getSummary(KEY_NEXT_LAUNCH_INTENT));
     }
 
     private class InitListTask extends AsyncTask<Void, Void, Void> {
@@ -264,19 +302,11 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
 
         @Override
         protected void onPostExecute(Void voids) {
-            mCameraLaunchIntent.setSummary(getSummary(KEY_CAMERA_LAUNCH_INTENT));
+            reloadSummarys();
             mCameraLaunchIntent.setEnabled(true);
-
-            mTorchLaunchIntent.setSummary(getSummary(KEY_TORCH_LAUNCH_INTENT));
             mTorchLaunchIntent.setEnabled(true);
-
-            mPlayPauseLaunchIntent.setSummary(getSummary(KEY_PLAY_PAUSE_LAUNCH_INTENT));
             mPlayPauseLaunchIntent.setEnabled(true);
-
-            mPreviousLaunchIntent.setSummary(getSummary(KEY_PREVIOUS_LAUNCH_INTENT));
             mPreviousLaunchIntent.setEnabled(true);
-
-            mNextLaunchIntent.setSummary(getSummary(KEY_NEXT_LAUNCH_INTENT));
             mNextLaunchIntent.setEnabled(true);
         }
     }

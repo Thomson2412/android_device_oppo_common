@@ -361,15 +361,20 @@ public class KeyHandler implements DeviceKeyHandler {
             if(packageName.equals("") || packageName.equals("default")){
                 return false;
             }
-			else if(packageName.equals("shortcut")){
-				intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
-			}
-			else{
+			else if(packageName.startsWith("intent:")){
+                Log.e("KeyHandler", "packageName.equals(shortcut)");
                 try{
+                    Log.e("KeyHandler", "Try shortcut");
                     intent = Intent.parseUri(packageName, Intent.URI_INTENT_SCHEME);
                 } catch(URISyntaxException e){
+                    Log.e("KeyHandler", "Shortcut failed");
+                    e.printStackTrace();
                     return false;
                 }
+			}
+			else{
+                Log.e("KeyHandler", "NOT packageName.equals(shortcut)");
+                intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
 			}
 			if(intent != null){
 				mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);

@@ -63,7 +63,7 @@
     <string name="oclick_notification_title_connected">O-Click connected</string>
     <string name="oclick_notification_title_disconnected">O-Click disconnected</string>
     <string name="oclick_notification_content_disconnected">Press the O-Click button to reconnect</string>
-    
+
     <!-- haptic feedback  -->
     <string name="touchscreen_extras">Haptic feedback</string>
     <string name="haptic_feedback">Haptic feedback</string>
@@ -85,27 +85,43 @@
         <item>touchscreen_gesture_torch_feedback</item>
     </string-array>
     <string-array name="empty_array"/>
-    
+
     <!-- launch action  -->
     <string name="touchscreen_action_title">Launch action</string>
-    
+
     <string name="touchscreen_action_title_camera">Camera</string>
     <string name="touchscreen_action_title_camera_summary">Loading...</string>
-    
+
     <string name="touchscreen_action_title_flashlight">Flashlight</string>
     <string name="touchscreen_action_title_flashlight_summary">Loading...</string>
-    
+
     <string name="touchscreen_action_title_play">Play/Pause</string>
     <string name="touchscreen_action_title_play_summary">Loading...</string>
-    
+
     <string name="touchscreen_action_title_previous">Previous</string>
     <string name="touchscreen_action_title_previous_summary">Loading...</string>
-    
+
     <string name="touchscreen_action_title_next">Next</string>
     <string name="touchscreen_action_title_next_summary">Loading...</string>
-    
+
     <string name="touchscreen_action_default">Default action</string>
-	<string name="touchscreen_action_shortcut">Custom shortcut</string>
+    <string name="touchscreen_action_shortcut">Custom shortcut</string>
     <string name="touchscreen_action_unkownappforpackagename">(Unkown)</string>
 
+    <!-- Button settings -->
+    <string name="button_panel_title">Additional buttons</string>
+    <string name="button_swap_title">Swap buttons</string>
+    <string name="button_swap_summary">Swap the order of recents and back buttons</string>
+
+    <!-- Notification slider -->
+    <string name="notification_slider_category_title">Notification slider</string>
+    <string name="notification_slider_selection_dialog_title">Action</string>
+    <string name="notification_slider_top_position">Top position</string>
+    <string name="notification_slider_middle_position">Middle position</string>
+    <string name="notification_slider_bottom_position">Bottom position</string>
+    <string name="notification_slider_mode_total_silence">Total silence</string>
+    <string name="notification_slider_mode_alarms_only">Alarms only</string>
+    <string name="notification_slider_mode_priority_only">Priority only</string>
+    <string name="notification_slider_mode_none">None</string>
+    
 </resources>

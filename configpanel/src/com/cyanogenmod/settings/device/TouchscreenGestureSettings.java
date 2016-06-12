@@ -25,9 +25,13 @@ import android.preference.ListPreference;
 
 import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -265,22 +269,37 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
     }
 
     private class InitListTask extends AsyncTask<Void, Void, Void> {
+        private int defaultValuesCount = 2;
 
         @Override
         protected Void doInBackground(Void... voids) {
-            List<String> listPackageNames = getPackageNames();
-            listPackageNames.add(0, "default");
-            listPackageNames.add(1, "shortcut");
-            final CharSequence[] packageNames =
-                    listPackageNames.toArray(new CharSequence[listPackageNames.size()]);
-            final CharSequence[] hrblPackageNames = new CharSequence[listPackageNames.size()];
+            TreeMap<String, String> treemap = new TreeMap<String, String>(new Comparator<String>() {
+                public int compare(String o1, String o2) {
+                    return o1.toLowerCase().compareTo(o2.toLowerCase());
+                }
+            });
 
-            for(int i = 0; i < listPackageNames.size(); i++){
-                hrblPackageNames[i] = getAppnameFromPackagename(listPackageNames.get(i));
+            List<String> listPackageNames = getPackageNames();
+            for (String name : listPackageNames){
+                treemap.put(getAppnameFromPackagename(name), name);
             }
+
+            final CharSequence[] packageNames = new CharSequence[listPackageNames.size() + defaultValuesCount];
+            final CharSequence[] hrblPackageNames = new CharSequence[listPackageNames.size() + defaultValuesCount];
 
 			hrblPackageNames[0] = getResources().getString(R.string.touchscreen_action_default);
             hrblPackageNames[1] = getResources().getString(R.string.touchscreen_action_shortcut);
+            packageNames[0] = "default";
+            packageNames[1] = "shortcut";
+            int counter = defaultValuesCount;
+            Iterator ittwo = treemap.entrySet().iterator();
+            while (ittwo.hasNext()) {
+                Map.Entry pairs = (Map.Entry)ittwo.next();
+                hrblPackageNames[counter] = (CharSequence)pairs.getKey();
+                packageNames[counter] = (CharSequence)pairs.getValue();
+                ittwo.remove();
+                counter++;
+            }
 
             mCameraLaunchIntent.setEntries(hrblPackageNames);
             mCameraLaunchIntent.setEntryValues(packageNames);

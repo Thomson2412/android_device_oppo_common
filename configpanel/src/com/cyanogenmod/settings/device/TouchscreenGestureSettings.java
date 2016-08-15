@@ -38,6 +38,8 @@ import android.content.pm.ApplicationInfo;
 import android.os.AsyncTask;
 import android.provider.Settings;
 
+import android.util.Log;
+
 import com.cyanogenmod.settings.device.utils.NodePreferenceActivity;
 
 import cyanogenmod.providers.CMSettings;
@@ -45,6 +47,8 @@ import cyanogenmod.providers.CMSettings;
 import org.cyanogenmod.internal.util.ScreenType;
 
 public class TouchscreenGestureSettings extends NodePreferenceActivity {
+    private static final String TAG = "ConfigPanel";
+
     private static final String KEY_HAPTIC_FEEDBACK = "touchscreen_gesture_haptic_feedback";
 
     private static final String KEY_CAMERA_LAUNCH_INTENT =
@@ -71,6 +75,7 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "Creating");
         addPreferencesFromResource(R.xml.touchscreen_panel);
 
         mHapticFeedback = (MultiSelectListPreference) findPreference(KEY_HAPTIC_FEEDBACK);
@@ -92,11 +97,14 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
         mNextLaunchIntent.setOnPreferenceChangeListener(this);
 
         new InitListTask().execute();
+
+        Log.d(TAG, "Creating done");
     }
 
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         final String key = preference.getKey();
+        Log.d(TAG, "Preference change for: " + key);
         if (KEY_HAPTIC_FEEDBACK.equals(key)) {
             final Set<String> value = (Set<String>) newValue;
             final CharSequence[] valueOptions = mHapticFeedback.getEntryValues();
@@ -229,10 +237,12 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
                 packageNameList.add(packageName);
             }
         }
+        Log.d(TAG, "Packagenames: " + packageNameList);
         return packageNameList;
     }
 
     private String getAppnameFromPackagename(String packagename){
+        Log.d(TAG, "Get appname for: " + packagename);
         if(packagename == null || "".equals(packagename)){
             return getResources().getString(R.string.touchscreen_action_default);
         }
@@ -247,6 +257,7 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
     }
 
     private String getSummary(String key){
+        Log.d(TAG, "Get summary for: " + key);
         String summary = Settings.System.getString(getContentResolver(), key);
         if(summary == null){
             return getResources().getString(R.string.touchscreen_action_unkownappforpackagename);
@@ -261,15 +272,16 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
     }
 
     private void reloadSummarys(){
+        Log.d(TAG, "Reloading summarys");
         mCameraLaunchIntent.setSummary(getSummary(KEY_CAMERA_LAUNCH_INTENT));
         mTorchLaunchIntent.setSummary(getSummary(KEY_TORCH_LAUNCH_INTENT));
         mPlayPauseLaunchIntent.setSummary(getSummary(KEY_PLAY_PAUSE_LAUNCH_INTENT));
         mPreviousLaunchIntent.setSummary(getSummary(KEY_PREVIOUS_LAUNCH_INTENT));
         mNextLaunchIntent.setSummary(getSummary(KEY_NEXT_LAUNCH_INTENT));
+        Log.d(TAG, "Reloading done");
     }
 
     private class InitListTask extends AsyncTask<Void, Void, Void> {
-        private int defaultValuesCount = 2;
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -284,49 +296,55 @@ public class TouchscreenGestureSettings extends NodePreferenceActivity {
                 treemap.put(getAppnameFromPackagename(name), name);
             }
 
-            final CharSequence[] packageNames = new CharSequence[listPackageNames.size() + defaultValuesCount];
-            final CharSequence[] hrblPackageNames = new CharSequence[listPackageNames.size() + defaultValuesCount];
+            ArrayList<CharSequence> packageNames = new ArrayList<CharSequence>();
+            ArrayList<CharSequence> hrblPackageNames = new ArrayList<CharSequence>();
 
-			hrblPackageNames[0] = getResources().getString(R.string.touchscreen_action_default);
-            hrblPackageNames[1] = getResources().getString(R.string.touchscreen_action_shortcut);
-            packageNames[0] = "default";
-            packageNames[1] = "shortcut";
-            int counter = defaultValuesCount;
+            hrblPackageNames.add(getResources().getString(R.string.touchscreen_action_default));
+            hrblPackageNames.add(getResources().getString(R.string.touchscreen_action_shortcut));
+            packageNames.add("default");
+            packageNames.add("shortcut");
+
             Iterator ittwo = treemap.entrySet().iterator();
             while (ittwo.hasNext()) {
                 Map.Entry pairs = (Map.Entry)ittwo.next();
-                hrblPackageNames[counter] = (CharSequence)pairs.getKey();
-                packageNames[counter] = (CharSequence)pairs.getValue();
+                hrblPackageNames.add((CharSequence)pairs.getKey());
+                packageNames.add((CharSequence)pairs.getValue());
                 ittwo.remove();
-                counter++;
             }
 
-            mCameraLaunchIntent.setEntries(hrblPackageNames);
-            mCameraLaunchIntent.setEntryValues(packageNames);
+            final CharSequence[] packageNamesCharsq = packageNames.toArray(new CharSequence[packageNames.size()]);
+            final CharSequence[] hrblPackageNamesCharsq = hrblPackageNames.toArray(new CharSequence[hrblPackageNames.size()]);
 
-            mTorchLaunchIntent.setEntries(hrblPackageNames);
-            mTorchLaunchIntent.setEntryValues(packageNames);
+            mCameraLaunchIntent.setEntries(hrblPackageNamesCharsq);
+            mCameraLaunchIntent.setEntryValues(packageNamesCharsq);
 
-            mPlayPauseLaunchIntent.setEntries(hrblPackageNames);
-            mPlayPauseLaunchIntent.setEntryValues(packageNames);
+            mTorchLaunchIntent.setEntries(hrblPackageNamesCharsq);
+            mTorchLaunchIntent.setEntryValues(packageNamesCharsq);
 
-            mPreviousLaunchIntent.setEntries(hrblPackageNames);
-            mPreviousLaunchIntent.setEntryValues(packageNames);
+            mPlayPauseLaunchIntent.setEntries(hrblPackageNamesCharsq);
+            mPlayPauseLaunchIntent.setEntryValues(packageNamesCharsq);
 
-            mNextLaunchIntent.setEntries(hrblPackageNames);
-            mNextLaunchIntent.setEntryValues(packageNames);
+            mPreviousLaunchIntent.setEntries(hrblPackageNamesCharsq);
+            mPreviousLaunchIntent.setEntryValues(packageNamesCharsq);
+
+            mNextLaunchIntent.setEntries(hrblPackageNamesCharsq);
+            mNextLaunchIntent.setEntryValues(packageNamesCharsq);
+
+            Log.d(TAG, "Done setting");
 
             return null;
         }
 
         @Override
         protected void onPostExecute(Void voids) {
+            Log.d(TAG, "OnPostExecute");
             reloadSummarys();
             mCameraLaunchIntent.setEnabled(true);
             mTorchLaunchIntent.setEnabled(true);
             mPlayPauseLaunchIntent.setEnabled(true);
             mPreviousLaunchIntent.setEnabled(true);
             mNextLaunchIntent.setEnabled(true);
+            Log.d(TAG, "OnPostExecutededded");
         }
     }
 }

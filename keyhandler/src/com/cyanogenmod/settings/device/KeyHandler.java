@@ -256,7 +256,7 @@ public class KeyHandler implements DeviceKeyHandler {
         }
 
         if (!hasSetupCompleted()) {
-            return false;
+            //return false;
         }
 
         // We only want ACTION_UP event, except FLIP_CAMERA_SCANCODE

@@ -18,9 +18,13 @@ package com.cyanogenmod.settings.device;
 
 import android.content.ActivityNotFoundException;
 import android.Manifest;
+import android.app.KeyguardManager;
+import android.app.KeyguardManager.KeyguardLock;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -48,7 +52,7 @@ import com.android.internal.util.ArrayUtils;
 
 import cyanogenmod.providers.CMSettings;
 
-public class KeyHandler implements DeviceKeyHandler {
+public class KeyHandler extends BroadcastReceiver implements DeviceKeyHandler  {
 
     private static final String TAG = KeyHandler.class.getSimpleName();
     private static final int GESTURE_REQUEST = 1;
@@ -111,6 +115,8 @@ public class KeyHandler implements DeviceKeyHandler {
 
     private final Context mContext;
     private final PowerManager mPowerManager;
+    private KeyguardManager mKeyguardManager;
+    KeyguardLock mKeyguardLock;
     private final NotificationManager mNotificationManager;
     private EventHandler mEventHandler;
     private SensorManager mSensorManager;
@@ -123,6 +129,7 @@ public class KeyHandler implements DeviceKeyHandler {
     WakeLock mGestureWakeLock;
     private int mProximityTimeOut;
     private boolean mProximityWakeSupported;
+    private boolean disableKGbyScreenOn;
 
     public KeyHandler(Context context) {
         mContext = context;
@@ -153,6 +160,11 @@ public class KeyHandler implements DeviceKeyHandler {
 
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         mCameraManager.registerTorchCallback(new MyTorchCallback(), mEventHandler);
+
+        // REGISTER RECEIVER THAT HANDLES SCREEN ON LOGIC
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+        context.registerReceiver(this, filter);
+
     }
 
     private class MyTorchCallback extends CameraManager.TorchCallback {
@@ -188,6 +200,16 @@ public class KeyHandler implements DeviceKeyHandler {
             }
         }
         return mRearCameraId;
+    }
+
+    private void ensureKeyguardManager() {
+        if (mKeyguardManager == null) {
+            mKeyguardManager =
+                    (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
+        }
+        if (mKeyguardLock == null) {
+            mKeyguardLock = mKeyguardManager.newKeyguardLock(Context.KEYGUARD_SERVICE);
+        }
     }
 
     private class EventHandler extends Handler {
@@ -314,84 +336,100 @@ public class KeyHandler implements DeviceKeyHandler {
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
-            }, mProximitySensor, SensorManager.SENSOR_DELAY_FASTEST);
-        }
+        }, mProximitySensor, SensorManager.SENSOR_DELAY_FASTEST);
+    }
 
-        private void dispatchMediaKeyWithWakeLockToMediaSession(int keycode) {
-            MediaSessionLegacyHelper helper = MediaSessionLegacyHelper.getHelper(mContext);
-            if (helper != null) {
-                KeyEvent event = new KeyEvent(SystemClock.uptimeMillis(),
-                SystemClock.uptimeMillis(), KeyEvent.ACTION_DOWN, keycode, 0);
-                helper.sendMediaButtonEvent(event, true);
-                event = KeyEvent.changeAction(event, KeyEvent.ACTION_UP);
-                helper.sendMediaButtonEvent(event, true);
-            } else {
-                Log.w(TAG, "Unable to send media key event");
-            }
-        }
-
-        private void startActivitySafely(Intent intent) {
-            intent.addFlags(
-            Intent.FLAG_ACTIVITY_NEW_TASK
-            | Intent.FLAG_ACTIVITY_SINGLE_TOP
-            | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            try {
-                UserHandle user = new UserHandle(UserHandle.USER_CURRENT);
-                mContext.startActivityAsUser(intent, null, user);
-            } catch (ActivityNotFoundException e) {
-                // Ignore
-            }
-        }
-
-        private void doHapticFeedback(String key) {
-            boolean enabled = Settings.System.getInt(mContext.getContentResolver(), key, 0) != 0;
-            if(enabled){
-                doHapticFeedback();
-            }
-        }
-
-        private void doHapticFeedback() {
-            if (mVibrator == null) {
-                return;
-            }
-            boolean enabled = CMSettings.System.getInt(mContext.getContentResolver(),
-            CMSettings.System.TOUCHSCREEN_GESTURE_HAPTIC_FEEDBACK, 1) != 0;
-            if (enabled) {
-                mVibrator.vibrate(50);
-            }
-        }
-
-        private boolean launchIntentFromKey(String key){
-            String packageName = Settings.System.getString(mContext.getContentResolver(), key);
-			if(packageName == null){
-				return false;
-			}
-            Intent intent = null;
-            if(packageName.equals("") || packageName.equals("default")){
-                return false;
-            }
-			else if(packageName.startsWith("intent:")){
-                Log.e("KeyHandler", "packageName.equals(shortcut)");
-                try{
-                    Log.e("KeyHandler", "Try shortcut");
-                    intent = Intent.parseUri(packageName, Intent.URI_INTENT_SCHEME);
-                } catch(URISyntaxException e){
-                    Log.e("KeyHandler", "Shortcut failed");
-                    e.printStackTrace();
-                    return false;
-                }
-			}
-			else{
-                Log.e("KeyHandler", "NOT packageName.equals(shortcut)");
-                intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
-			}
-			if(intent != null){
-				mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
-				mPowerManager.wakeUp(SystemClock.uptimeMillis());
-				mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT);
-				startActivitySafely(intent);
-				return true;
-			}
-            return false;
+    private void dispatchMediaKeyWithWakeLockToMediaSession(int keycode) {
+        MediaSessionLegacyHelper helper = MediaSessionLegacyHelper.getHelper(mContext);
+        if (helper != null) {
+            KeyEvent event = new KeyEvent(SystemClock.uptimeMillis(),
+            SystemClock.uptimeMillis(), KeyEvent.ACTION_DOWN, keycode, 0);
+            helper.sendMediaButtonEvent(event, true);
+            event = KeyEvent.changeAction(event, KeyEvent.ACTION_UP);
+            helper.sendMediaButtonEvent(event, true);
+        } else {
+            Log.w(TAG, "Unable to send media key event");
         }
     }
+
+    private void startActivitySafely(Intent intent) {
+        intent.addFlags(
+        Intent.FLAG_ACTIVITY_NEW_TASK
+        | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        try {
+            UserHandle user = new UserHandle(UserHandle.USER_CURRENT);
+            mContext.startActivityAsUser(intent, null, user);
+        } catch (ActivityNotFoundException e) {
+            // Ignore
+        }
+    }
+
+    private void doHapticFeedback(String key) {
+        boolean enabled = Settings.System.getInt(mContext.getContentResolver(), key, 0) != 0;
+        if(enabled){
+            doHapticFeedback();
+        }
+    }
+
+    private void doHapticFeedback() {
+        if (mVibrator == null) {
+            return;
+        }
+        boolean enabled = CMSettings.System.getInt(mContext.getContentResolver(),
+        CMSettings.System.TOUCHSCREEN_GESTURE_HAPTIC_FEEDBACK, 1) != 0;
+        if (enabled) {
+            mVibrator.vibrate(50);
+        }
+    }
+
+    private boolean launchIntentFromKey(String key){
+        String packageName = Settings.System.getString(mContext.getContentResolver(), key);
+        ensureKeyguardManager();
+        if(packageName == null){
+            return false;
+        }
+        Intent intent = null;
+        if(packageName.equals("") || packageName.equals("default")){
+            return false;
+        }
+        else if(packageName.startsWith("intent:")){
+            Log.e("KeyHandler", "packageName.equals(shortcut)");
+            try{
+                Log.e("KeyHandler", "Try shortcut");
+                intent = Intent.parseUri(packageName, Intent.URI_INTENT_SCHEME);
+            } catch(URISyntaxException e){
+                Log.e("KeyHandler", "Shortcut failed");
+                e.printStackTrace();
+                return false;
+            }
+        }
+        else{
+            Log.e("KeyHandler", "NOT packageName.equals(shortcut)");
+            intent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        }
+        if(intent != null){
+            disableKGbyScreenOn = true;
+            mGestureWakeLock.acquire(GESTURE_WAKELOCK_DURATION);
+            mPowerManager.wakeUp(SystemClock.uptimeMillis());
+            //mContext.sendBroadcastAsUser(new Intent(ACTION_DISMISS_KEYGUARD), UserHandle.CURRENT); // Doesn't work on CM14
+            startActivitySafely(intent);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
+            Log.d("KeyHandler", "Screen turned on disabling keyguard");
+            if(disableKGbyScreenOn) {
+                ensureKeyguardManager();
+                if (!mKeyguardManager.isKeyguardSecure()) {
+                    mKeyguardLock.disableKeyguard();
+                    disableKGbyScreenOn = false;
+                }
+            }
+        }
+    }
+}

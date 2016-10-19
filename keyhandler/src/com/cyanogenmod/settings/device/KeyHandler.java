@@ -130,6 +130,7 @@ public class KeyHandler extends BroadcastReceiver implements DeviceKeyHandler  {
     private int mProximityTimeOut;
     private boolean mProximityWakeSupported;
     private boolean disableKGbyScreenOn;
+    private boolean isKGDismissed;
 
     public KeyHandler(Context context) {
         mContext = context;
@@ -163,6 +164,7 @@ public class KeyHandler extends BroadcastReceiver implements DeviceKeyHandler  {
 
         // REGISTER RECEIVER THAT HANDLES SCREEN ON LOGIC
         IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
         context.registerReceiver(this, filter);
 
     }
@@ -422,12 +424,22 @@ public class KeyHandler extends BroadcastReceiver implements DeviceKeyHandler  {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-            Log.d("KeyHandler", "Screen turned on disabling keyguard");
             if(disableKGbyScreenOn) {
+                Log.d("KeyHandler", "Screen turned on disabling keyguard");
+                ensureKeyguardManager();
+                if (!mKeyguardManager.isKeyguardSecure() && !isKGDismissed) {
+                    mKeyguardLock.disableKeyguard();
+                    isKGDismissed = true;
+                    disableKGbyScreenOn = false;
+                }
+            }
+        }
+        else if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+            if(isKGDismissed) {
                 ensureKeyguardManager();
                 if (!mKeyguardManager.isKeyguardSecure()) {
-                    mKeyguardLock.disableKeyguard();
-                    disableKGbyScreenOn = false;
+                    mKeyguardLock.reenableKeyguard();
+                    isKGDismissed = false;
                 }
             }
         }

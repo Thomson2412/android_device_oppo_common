@@ -32,9 +32,9 @@
     <application
         android:icon="@mipmap/ic_launcher_settings"
         android:label="@*cyanogenmod.platform:string/device_settings_app_name"
-        android:theme="@style/Theme.Main">
-        <!-- android:defaultToDeviceProtectedStorage="true"
-        android:directBootAware="true"> -->
+        android:theme="@style/Theme.Main"
+        android:defaultToDeviceProtectedStorage="true"
+        android:directBootAware="true">
 
         <provider
             android:name=".ConfigPanelSearchIndexablesProvider"
